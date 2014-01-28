@@ -22,7 +22,7 @@ except ImportError, err:
     def connect(*args, **kwargs):
         raise err
 
-from . import mvt, geojson, topojson
+from . import mvt, geojson, topojson, oscimap
 from ...Geography import SphericalMercator
 from ModestMaps.Core import Point
 
@@ -154,8 +154,8 @@ class Provider:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
-        
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
+
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -168,7 +168,10 @@ class Provider:
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
-        
+
+        elif extension.lower() == 'vtm':
+            return 'image/png', 'OpenScienceMap' # TODO: make this proper stream type, app only seems to work with png
+
         else:
             raise ValueError(extension)
 
@@ -232,7 +235,7 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, coord):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
@@ -241,12 +244,14 @@ class Response:
         self.bounds = bounds
         self.zoom = zoom
         self.clip = clip
-        
+        self.coord = coord
+
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
-    
+        oscimap_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip, oscimap.extents)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, OpenScienceMap=oscimap_query)
+
     def save(self, out, format):
         '''
         '''
@@ -279,7 +284,10 @@ class Response:
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
-        
+
+        elif format == 'OpenScienceMap':
+            oscimap.encode(out, features, self.coord)
+
         else:
             raise ValueError(format)
 
@@ -302,7 +310,10 @@ class EmptyResponse:
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
-        
+
+        elif format == 'OpenScienceMap':
+            oscimap.encode(out, [], self.coord)
+
         else:
             raise ValueError(format)
 
@@ -357,8 +368,8 @@ def query_columns(dbinfo, srid, subquery, bounds):
             
             column_names = set(row.keys())
             return column_names
-        
-def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
+
+def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped, scale=None):
     ''' Build and return an PostGIS query.
     '''
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
@@ -372,7 +383,11 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
     
     if is_geo:
         geom = 'ST_Transform(%s, 4326)' % geom
-    
+
+    # TODO: move this out of the query?
+    if scale:
+        geom = 'ST_TransScale(%s, -ST_XMin(%s), -ST_YMin(%s), (%d / (ST_XMax(%s) - ST_XMin(%s))), (%d / (ST_YMax(%s) - ST_YMin(%s))))' % (geom, bbox, bbox, scale, bbox, bbox, scale, bbox, bbox)
+
     subquery = subquery.replace('!bbox!', bbox)
     columns = ['q."%s"' % c for c in subcolumns if c not in ('__geometry__', )]
     
