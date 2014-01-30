@@ -212,6 +212,9 @@ class MultiProvider:
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
+
+        elif extension.lower() == 'vtm':
+            return 'image/png', 'OpenScienceMap' # TODO: make this proper stream type, app only seems to work with png
         
         else:
             raise ValueError(extension)
@@ -255,24 +258,7 @@ class Response:
     def save(self, out, format):
         '''
         '''
-        with Connection(self.dbinfo) as db:
-            db.execute(self.query[format])
-            
-            features = []
-            
-            for row in db.fetchall():
-                if row['__geometry__'] is None:
-                    continue
-            
-                wkb = bytes(row['__geometry__'])
-                prop = dict([(k, v) for (k, v) in row.items()
-                             if k not in ('__geometry__', '__id__')])
-                
-                if '__id__' in row:
-                    features.append((wkb, prop, row['__id__']))
-                
-                else:
-                    features.append((wkb, prop))
+        features = get_features(self.dbinfo, self.query[format])
 
         if format == 'MVT':
             mvt.encode(out, features)
@@ -326,7 +312,6 @@ class MultiResponse:
         self.config = config
         self.names = names
         self.coord = coord
-    
     def save(self, out, format):
         '''
         '''
@@ -335,6 +320,16 @@ class MultiResponse:
         
         elif format == 'JSON':
             geojson.merge(out, self.names, self.config, self.coord)
+
+        elif format == 'OpenScienceMap':
+            features = []
+            layers = [self.config.layers[name] for name in self.names]
+            for layer in layers:
+                width, height = layer.dim, layer.dim
+                tile = layer.provider.renderTile(width, height, layer.projection.srs, self.coord)
+                if isinstance(tile,EmptyResponse): continue
+                features.extend(get_features(tile.dbinfo, tile.query["OpenScienceMap"]))
+            oscimap.encode(out, features, self.coord)
         
         else:
             raise ValueError(format)
@@ -368,6 +363,27 @@ def query_columns(dbinfo, srid, subquery, bounds):
             
             column_names = set(row.keys())
             return column_names
+
+def get_features(dbinfo, query):
+    with Connection(dbinfo) as db:
+        db.execute(query)
+        
+        features = []
+        
+        for row in db.fetchall():
+            if row['__geometry__'] is None:
+                continue
+        
+            wkb = bytes(row['__geometry__'])
+            prop = dict([(k, v) for (k, v) in row.items()
+                         if k not in ('__geometry__', '__id__')])
+            
+            if '__id__' in row:
+                features.append((wkb, prop, row['__id__']))
+            
+            else:
+                features.append((wkb, prop))
+    return features
 
 def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped, scale=None):
     ''' Build and return an PostGIS query.
