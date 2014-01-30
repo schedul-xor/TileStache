@@ -298,7 +298,7 @@ class EmptyResponse:
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
 
         elif format == 'OpenScienceMap':
-            oscimap.encode(out, [], self.coord)
+            oscimap.encode(out, [], None)
 
         else:
             raise ValueError(format)
