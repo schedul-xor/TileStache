@@ -26,7 +26,7 @@ from . import mvt, geojson, topojson, oscimap
 from ...Geography import SphericalMercator
 from ModestMaps.Core import Point
 
-tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
+tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(22)]
 
 class Provider:
     ''' VecTiles provider for PostGIS data sources.
