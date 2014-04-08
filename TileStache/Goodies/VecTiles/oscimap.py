@@ -18,6 +18,9 @@ attrib_offset = 256
 # coordindates are scaled to this range within tile
 extents = 4096
 
+# tiles are padded by this number of pixels for the current zoom level (OSciMap uses this to cover up seams between tiles)
+padding = 5
+
 def encode(file, features, coord):
         tile = VectorTile(extents)
 
