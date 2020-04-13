@@ -148,6 +148,27 @@ necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
 
+## Setting up non-OSM, other data sources
+
+Insert OSM.us-vector-datasource
+```
+cd OSM.us-vector-datasource
+cd data
+unzip land-usages-naturalearth.zip
+unzip water-areas-naturalearth.zip
+PATH=/opt/local/lib/postgresql93/bin:$PATH ./shp2pgsql.sh|psql -U postgres gis
+```
+
+Insert water-polygons
+```
+mkdir water-polygons
+wget http://data.openstreetmapdata.com/water-polygons-split-4326.zip
+unzip water-polygons-split-4326.zip
+/opt/local/lib/postgresql93/bin/shp2pgsql -dID -s 900913 -W Windows-1252 -g the_geom water-polygons-split-4326/water_polygons.shp water_polygons|psql -U postgres gis
+```
+
+Reference: https://smellman.hatenablog.com/entry/2014/10/18/030234
+
 ## License
 
 BSD, see LICENSE file.
