@@ -190,7 +190,7 @@ def populate_tables(db, prefix, tmp_prefix, bounds):
     
         Replace existing data and work within a single transaction.
     """
-    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % bounds
+    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 3857)' % bounds
     
     db.execute('BEGIN')
     

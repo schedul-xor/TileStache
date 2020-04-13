@@ -33,9 +33,9 @@ Keyword arguments:
   query:
     PostGIS query with a "!bbox!" placeholder for the tile bounding box.
     Note that the table *must* use the web spherical mercaotr projection
-    900913. Query should return an id column, a geometry column, and other
+    3857. Query should return an id column, a geometry column, and other
     columns to be placed in the GeoJSON "properties" dictionary.
-    See below for more on 900913.
+    See below for more on 3857.
   
   clipping:
     Boolean flag for optionally clipping the output geometries to the bounds
@@ -80,14 +80,14 @@ Example TileStache provider configuration:
 
 Caveats:
 
-Currently only databases in the 900913 (google) projection are usable,
+Currently only databases in the 3857 (google) projection are usable,
 though this is the default setting for OpenStreetMap imports from osm2pgsql.
 The "!bbox!" query placeholder (see example below) must be lowercase, and
 expands to:
     
-    ST_SetSRID(ST_MakeBox2D(ST_MakePoint(ulx, uly), ST_MakePoint(lrx, lry)), 900913)
+    ST_SetSRID(ST_MakeBox2D(ST_MakePoint(ulx, uly), ST_MakePoint(lrx, lry)), 3857)
     
-You must support the "900913" SRID in your PostGIS database for now.
+You must support the "3857" SRID in your PostGIS database for now.
 For populating the internal PostGIS spatial_ref_sys table of projections,
 this seems to work:
 
@@ -95,7 +95,7 @@ this seems to work:
     (srid, auth_name, auth_srid, srtext, proj4text)
     VALUES
     (
-      900913, 'spatialreference.org', 900913,
+      3857, 'spatialreference.org', 3857,
       'PROJCS["Popular Visualisation CRS / Mercator",GEOGCS["Popular Visualisation CRS",DATUM["Popular_Visualisation_Datum",SPHEROID["Popular Visualisation Sphere",6378137,0,AUTHORITY["EPSG","7059"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6055"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4055"]],UNIT["metre",1,AUTHORITY["EPSG","9001"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],AUTHORITY["EPSG","3785"],AXIS["X",EAST],AXIS["Y",NORTH]]',
       '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over'
     );
@@ -252,7 +252,7 @@ class Provider:
         ul = self.mercator.locationProj(nw)
         lr = self.mercator.locationProj(se)
         
-        bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
+        bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 3857)' % (ul.x, ul.y, lr.x, lr.y)
         clip = self.clipping and Polygon([(ul.x, ul.y), (lr.x, ul.y), (lr.x, lr.y), (ul.x, lr.y)]) or None
 
         db = _connect(self.dbdsn).cursor(cursor_factory=RealDictCursor)

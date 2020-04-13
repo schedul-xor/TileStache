@@ -52,7 +52,7 @@ class Provider:
             queries indicate an empty response.
             
             Query must use "__geometry__" for a column name, and must be in
-            spherical mercator (900913) projection. A query may include an
+            spherical mercator (3857) projection. A query may include an
             "__id__" column, which will be used as a feature ID in GeoJSON
             instead of a dynamically-generated hash of the geometry. A query
             can additionally be a file name or URL, interpreted relative to
@@ -76,7 +76,7 @@ class Provider:
 
           srid:
             Optional numeric SRID used by PostGIS for spherical mercator.
-            Default 900913.
+            Default 3857.
         
           simplify:
             Optional floating point number of pixels to simplify all geometries.
@@ -128,7 +128,7 @@ class Provider:
         Note that JSON requires keys to be strings, therefore the zoom levels
         must be enclosed in quotes.
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16, padding=0):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=3857, simplify=1.0, simplify_until=16, padding=0):
         '''
         '''
         self.layer = layer

@@ -56,7 +56,7 @@ class SphericalMercator(MercatorProjection):
         MercatorProjection.__init__(self, 0, t)
 
     def coordinateProj(self, coord):
-        """ Convert from Coordinate object to a Point object in EPSG:900913
+        """ Convert from Coordinate object to a Point object in EPSG:3857
         """
         # the zoom at which we're dealing with meters on the ground
         diameter = 2 * _pi * 6378137
@@ -71,7 +71,7 @@ class SphericalMercator(MercatorProjection):
         return point
 
     def projCoordinate(self, point):
-        """ Convert from Point object in EPSG:900913 to a Coordinate object
+        """ Convert from Point object in EPSG:3857 to a Coordinate object
         """
         # the zoom at which we're dealing with meters on the ground
         diameter = 2 * _pi * 6378137
@@ -85,12 +85,12 @@ class SphericalMercator(MercatorProjection):
         return coord
 
     def locationProj(self, location):
-        """ Convert from Location object to a Point object in EPSG:900913
+        """ Convert from Location object to a Point object in EPSG:3857
         """
         return self.coordinateProj(self.locationCoordinate(location))
 
     def projLocation(self, point):
-        """ Convert from Point object in EPSG:900913 to a Location object
+        """ Convert from Point object in EPSG:3857 to a Location object
         """
         return self.coordinateLocation(self.projCoordinate(point))
 

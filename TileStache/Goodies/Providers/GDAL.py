@@ -100,7 +100,7 @@ class Provider:
             if mask_ds is not None:
                 mask_ds.SetProjection(merc.ExportToWkt())
 
-            # note that 900913 points north and east
+            # note that 3857 points north and east
             x, y = xmin, ymax
             w, h = xmax - xmin, ymin - ymax
 

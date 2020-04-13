@@ -73,7 +73,7 @@ Common parameters:
   projected:
     Default is false.
     Boolean flag for optionally returning geometries in projected rather than
-    geographic coordinates. Typically this means EPSG:900913 a.k.a. spherical
+    geographic coordinates. Typically this means EPSG:3857 a.k.a. spherical
     mercator projection. Stylistically a poor fit for GeoJSON, but useful
     when returning Arc GeoServices responses.
 
@@ -148,9 +148,9 @@ how to correctly filter and reproject it. Although response tiles are typically
 in web (spherical) mercator projection, the actual vector content of responses
 is unprojected back to plain WGS84 latitude and longitude.
 
-If you are using PostGIS and spherical mercator a.k.a. SRID 900913,
+If you are using PostGIS and spherical mercator a.k.a. SRID 3857,
 you can save yourself a world of trouble by using this definition:
-  http://github.com/straup/postgis-tools/raw/master/spatial_ref_900913-8.3.sql
+  http://github.com/straup/postgis-tools/raw/master/spatial_ref_3857-8.3.sql
 """
 
 from re import compile
